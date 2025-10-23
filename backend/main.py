@@ -1,19 +1,32 @@
 from fastapi import FastAPI
+from sqlalchemy.orm import Session
 from core.config import settings
 from db.session import engine, Base
+from db.base import Base  # Import all models, so that they will be registered properly on the metadata. Otherwise, you will have to import them first before calling Base.metadata.create_all
+from api import base_router
+from apps.base import app_route 
+from fastapi.staticfiles import StaticFiles
+
 
 def create_tables():
     Base.metadata.create_all(bind=engine)
+def indclude_router(app:Session):
+    app.include_router(base_router.api_router)
+    app.include_router(app_route)
+
+
+def configure_static_files(app:FastAPI):
+    app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 def start_application():
-    create_tables()
     app = FastAPI(title=settings.PROJECT_TITLE, version=settings.PROJECT_VERSION)
-
+    configure_static_files(app=app)
+    indclude_router(app=app)
     return app
 
 app=start_application()
 
-@app.get("/")
-def read_root():
-    return {"message": "Welcome to the Blog API!"}
+# @app.get("/")
+# def read_root():
+    # return {"message": "Welcome to the Blog API!"}
